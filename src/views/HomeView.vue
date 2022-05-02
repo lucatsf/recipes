@@ -1,45 +1,50 @@
 <template>
   <div class="home">
     <h1>Receitas</h1>
-    <button>Adicionar nova receita</button>
+    <button @click="togglePopup">Adicionar nova receita</button>
     <div class="recipes">
-      <!-- Receitas Aqui! -->
-
+      <div class="card" v-for="recipe in $store.state.recipes" :key="recipe.slug">
+        <h2>{{ recipe.title }}</h2>
+        <p>{{ recipe.description }}</p>
+        <router-link :to="`/recipe/${recipe.slug}`">
+          <button>Ver Receita</button>
+        </router-link>
+      </div>
     </div>
 
-    <div class="add-recipe-popup">
+    <div class="add-recipe-popup" v-if="popupOpen">
       <div class="popup-content">
         <h2>Adicionar nova receita</h2>
 
-        <form @submit.prevent="">
+        <form @submit.prevent="addNewRecipe">
           <div class="group">
             <label>Titulo</label>
-            <input type="text" />
+            <input type="text" v-model="newRecipe.title"/>
           </div>
 
           <div class="group">
             <label>Descrição</label>
-            <textarea></textarea>
+            <textarea v-model="newRecipe.description"></textarea>
           </div>
 
           <div class="group">
             <label>Ingredientes</label>
-            <div class="ingredient">
-              <input type="text" />
+            <div class="ingredient" v-for="i in newRecipe.ingredientRow" :key="i">
+              <input type="text" v-model="newRecipe.ingredients[ i - 1]"/>
             </div>
-            <button type="button">Adicionar Ingredientes</button>
+            <button type="button" @click="addNewIngredient">Adicionar Ingredientes</button>
           </div>
 
           <div class="group">
             <label>Modo de preparo</label>
-            <div class="method">
-              <textarea></textarea>
+            <div class="method" v-for="i in newRecipe.methodRow" :key="i">
+              <textarea v-model="newRecipe.methods[i - 1]"></textarea>
             </div>
-            <button type="button">Adicionar modo de preparo</button>
+            <button type="button" @click="addNewStep">Adicionar modo de preparo</button>
           </div>
 
           <button type="submit">Add Receita</button>
-          <button type="button">Fechar</button>
+          <button type="button" @click="togglePopup">Fechar</button>
         </form>
       </div>
     </div>
@@ -47,9 +52,68 @@
 </template>
 
 <script>
+import { ref } from 'vue';
+import { useStore } from 'vuex';
 
 export default {
-  name: 'HomeView'
+  name: 'HomeView',
+  setup () {
+    const newRecipe = ref({
+      title: '',
+      description: '',
+      ingredients: [],
+      methods: [],
+      ingredientRow: 1,
+      methodRow: 1
+    })
+
+    const popupOpen = ref(false)
+
+    const store = useStore()
+
+    const togglePopup = () => {
+      popupOpen.value =!popupOpen.value
+    }
+
+    const addNewIngredient = () => {
+      newRecipe.value.ingredientRow++
+    }
+
+    const addNewStep = () => {
+      newRecipe.value.methodRow++
+    }
+
+    const addNewRecipe = () => {
+      newRecipe.value.slug = newRecipe.value.title.toLowerCase().replace(/\s/g, '-')
+
+      if (newRecipe.value.slug == '') {
+        alert('Por favor, digite um titulo')
+        return
+      }
+
+      store.commit('ADD_RECIPE', { ...newRecipe.value })
+
+      newRecipe.value = {
+        title: '',
+        description: '',
+        ingredients: [],
+        methods: [],
+        ingredientRow: 1,
+        methodRow: 1
+      }
+
+      togglePopup()
+    }
+
+    return {
+      newRecipe,
+      togglePopup,
+      popupOpen,
+      addNewIngredient,
+      addNewStep,
+      addNewRecipe
+    }
+  }
 }
 </script>
 
